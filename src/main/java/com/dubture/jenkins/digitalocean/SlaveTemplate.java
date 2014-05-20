@@ -97,6 +97,16 @@ public class SlaveTemplate implements Describable<SlaveTemplate> {
 
     private transient Set<LabelAtom> labelSet;
 
+    /**
+     * Remote directory where it will execute jenkins tasks
+     */
+    private String remoteFS;
+
+    /**
+     * Remote user which will run jenkins tasks
+     */
+    private String remoteUser;
+    
     protected transient Cloud parent;
 
     private static final Logger LOGGER = Logger.getLogger(SlaveTemplate.class.getName());
@@ -110,7 +120,7 @@ public class SlaveTemplate implements Describable<SlaveTemplate> {
      * @param labelString
      */
     @DataBoundConstructor
-    public SlaveTemplate(String imageId, String sizeId, String regionId, String idleTerminationInMinutes, String labelString) {
+    public SlaveTemplate(String imageId, String sizeId, String regionId, String idleTerminationInMinutes, String labelString, String remoteFS, String remoteUser) {
 
         // prefix the dropletname with a prefix so we know its created by us and can be re-used as a slave if needed
         this.dropletName = SLAVE_PREFIX + UUID.randomUUID().toString();
@@ -121,6 +131,9 @@ public class SlaveTemplate implements Describable<SlaveTemplate> {
         this.idleTerminationInMinutes = Integer.parseInt(idleTerminationInMinutes);
         this.labelString = labelString;
         this.labels = Util.fixNull(labelString);
+        
+        this.remoteFS = remoteFS  != null ? remoteFS : "/jenkins";
+        this.remoteUser = remoteUser != null ? remoteUser : "root";
 
         readResolve();
     }
@@ -183,7 +196,7 @@ public class SlaveTemplate implements Describable<SlaveTemplate> {
      * @throws Descriptor.FormException
      */
     private Slave newSlave(Droplet droplet, String privateKey) throws IOException, Descriptor.FormException {
-        return new Slave(getParent().getName(), droplet.getName(), droplet.getId(), privateKey, "/jenkins", "root", 1, idleTerminationInMinutes, Node.Mode.NORMAL, labels, new ComputerLauncher(), new RetentionStrategy(), Collections.<NodeProperty<?>>emptyList(), "", "");
+        return new Slave(getParent().getName(), droplet.getName(), droplet.getId(), privateKey, remoteFS, remoteUser, 1, idleTerminationInMinutes, Node.Mode.NORMAL, labels, new ComputerLauncher(), new RetentionStrategy(), Collections.<NodeProperty<?>>emptyList(), "", "");
     }
 
     @Extension
